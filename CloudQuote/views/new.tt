@@ -1,0 +1,31 @@
+<form id="create-form" class="form-horizontal">
+  <fieldset>
+    <legend>Add a Quote</legend>
+    <div class="control-group">
+      <label class="control-label" for="quote-text">Quote</label>
+      <div class="controls">
+        <textarea id="quote-text" rows="5" placeholder="e.g. Two things are infinite: the universe and human stupidity; and I'm not sure about the universe."></textarea>
+      </div>
+    </div>
+    <div class="control-group">
+      <label class="control-label" for="quote-author">Author</label>
+      <div class="controls">
+        <input type="text" id="quote-author" placeholder="e.g. Albert Einstein" value="">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save changes</button>
+      <a href="/" class="btn">Cancel</a>
+    </div>
+  </fieldset>
+</form>
+
+<div class="alert alert-success" style="display: none;">
+  <button type="button" class="close" data-dismiss="alert">×</button>
+  <strong>Well done!</strong> You successfully submited a quote.
+</div>
+
+<div class="alert alert-error" style="display: none;">
+  <button type="button" class="close" data-dismiss="alert">×</button>
+  <strong>Oh snap!</strong> Change a few things up and try submitting again.
+</div>

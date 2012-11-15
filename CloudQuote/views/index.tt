@@ -1,0 +1,19 @@
+<form id="search-form">
+  <div class="input-append">
+    <input type="text" id="search-field" placeholder="e.g. Einstein"><button class="btn" id="search-trigger" type="button">Search</button>
+  </div>
+  <span class="muted help-block">Share a quote? Submit one <a href="/new">here</a>.</span>
+</form>
+
+<section id="quotes"></section>
+
+<script type="text/template" id="quotes-template">
+  {#quotes}
+    <blockquote>
+      <p>{quote}</p>
+      <footer>{author}</footer>
+    </blockquote>
+  {:else}
+    <p>No results found!</p>
+  {/quotes}
+</script>
