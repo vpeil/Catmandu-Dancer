@@ -13,28 +13,13 @@ set serializer => 'mutable';
 sub store {
   state $store = Catmandu::Store::ElasticSearch->new(
     index_name => 'quotes',
-    bags => { 'quote' }
+    bags => { 'quote' => {} }
   );
 }
 
 # Create our Bag.
 sub quotes {
   state $quotes = &store->bag('quote');
-}
-
-# DRY
-sub _search {
-  my ($self, $query) = @_;
-
-  my $results;
-
-  if ($query) {
-    $results = quotes->search(query => param('query'))->to_array;
-  } else {
-    $results = quotes->search()->to_array;
-  }
-
-  return $results;
 }
 
 ## GET /
@@ -50,15 +35,16 @@ get '/new' => sub {
 prefix '/api' => sub {
 
   ## GET /api/quotes/search/:query
-  get '/quotes/search/:query?' => sub {
-    my $results = _search(param('query'));
+  get '/quotes/search/:query' => sub {
+    my $results = quotes->search(query => param('query'))->to_array;
+
     $results ? status 200 : status 404;
     return $results;
   };
 
   ## GET /api/quotes/search/:query/export
-  get '/quotes/search/:query?/export' => sub {
-    my $results = _search(param('query'));
+  get '/quotes/search/:query/export' => sub {
+    my $results = quotes->search(query => param('query'));
     $results ? status 200 : status 404;
 
     ## Serialize to CSV
@@ -69,6 +55,13 @@ prefix '/api' => sub {
     content_type 'text/csv';
 
     return $csv;
+  };
+
+  get '/quotes' => sub {
+    my $results = quotes->search()->to_array;
+
+    $results ? status 200 : status 404;
+    return $results;
   };
 
   ## GET /api/quotes/5

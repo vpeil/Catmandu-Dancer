@@ -17,7 +17,11 @@ window.App = window.App || (function($, Backbone, _, dust) {
     model: module.Quote,
 
     url: function() {
-      return '/api/quotes/search/' + this.searchTerm;
+      if (this.searchTerm) {
+        return '/api/quotes/search/' + this.searchTerm;
+      }
+
+      return '/api/quotes'
     },
 
     initialize: function(opts) {
@@ -98,11 +102,8 @@ window.App = window.App || (function($, Backbone, _, dust) {
 
     search: function() {
       var searchTerm = this.$el.find('#search-field').val();
-
-      if( searchTerm ) {
-        var quotes = new module.Quotes();
-        quotes.search(searchTerm);
-      }
+      var quotes = new module.Quotes();
+      quotes.search(searchTerm);
     },
 
     showResults: function(results) {
