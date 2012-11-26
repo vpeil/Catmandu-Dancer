@@ -6,13 +6,20 @@
 	<meta name="description" content="">
 	<meta name="author" content="">
 
+	<!-- Le Fonts -->
+	<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:400,700">
+	<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Inconsolata">
+
 	<!-- Le Styles -->
 	<link rel="stylesheet" href="reveal/css/reveal.css">
 	<link rel="stylesheet" href="custom.css">
-	<link rel="stylesheet" href="reveal/lib/css/zenburn.css">
+
+	<!-- Code Highlighting -->
+	<link rel="stylesheet" href="reveal/lib/css/tomorrow.css">
+	<!--<link rel="stylesheet" href="reveal/lib/css/tomorrow-night-eighties.css">-->
 
 	<!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
-	 <!--[if lt IE 9]>
+	 <!--[if lt IE 9]
 	   <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
 	 <![endif]-->
 </head>
@@ -22,38 +29,31 @@
 		<div class="slides">
 
 			<section>
-				<h1>Beginning Dancer &amp; Catmandu</h1>
+				<h2 class="muted">Beginning</h2>
+				<h1>Catmandu &amp; Dancer</h1>
 				<p>
-					<small>UGent</small>
+					Slides <span class="muted">&amp;</span> samples available @
+					<a href="http://git.io/GIkLog" target="_blank">http://git.io/GIkLog</a>
 				</p>
 			</section>
 
 			<section>
-				<h2>Installing</h2>
-				<code>
-					$ cpanm Dancer
-				</code>
+				<h2>Requirements</h2>
+				<pre><code>
+$ cpanm Dancer
+				</code></pre>
+				<pre><code>
+$ cpanm Catmandu
+				</code></pre>
 			</section>
 
 			<section>
-				<h2>Installing</h2>
-				<code>
-					$ cpanm Dancer
-				</code>
-			</section>
-
-			<section>
-				<h2>Scaffolding</h2>
-				<code>
-					$ dancer -a MyWeb::App
-				</code>
-			</section>
-
-			<section>
-				<h2>Scaffolding</h2>
-				<code>
-					$ dancer -a MyWeb::App
-				</code>
+				<h2>dancat</h2>
+				<pre><code class="bash">
+$ dancat -s ElasticSearch -t tt -a MyWeb::App
+$ cd MyWeb-App
+$ ./bin/app.pl
+				</code></pre>
 			</section>
 
 			<section>
