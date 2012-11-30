@@ -29,16 +29,21 @@
 		<div class="slides">
 
 			<section>
-				<h2 class="muted">Beginning</h2>
+				<h2 class="dark-gray">Hands on</h2>
 				<h1>Catmandu &amp; Dancer</h1>
 				<p>
-					Slides <span class="muted">&amp;</span> samples available @
+					Slides and samples available at
 					<a href="http://git.io/GIkLog" target="_blank">http://git.io/GIkLog</a>
 				</p>
 			</section>
 
 			<section>
-				<h2>Requirements</h2>
+				<h1>CloudQuote</h1>
+				<h2><a href="http://0.0.0.0:3000" target="_blank">Demo</a></h2>
+			</section>
+
+			<section>
+				<h2>First things first</h2>
 				<pre><code>
 $ cpanm Dancer
 				</code></pre>
@@ -48,17 +53,214 @@ $ cpanm Catmandu
 			</section>
 
 			<section>
-				<h2>dancat</h2>
+				<h2><span class="dark-gray">Dan</span>cer + <span class="dark-gray">Cat</span>mandu =</h2>
+				<h1>dancat</h1>
+			</section>
+
+			<section>
+				<h2>usage</h2>
 				<pre><code>
-$ dancat -s ElasticSearch -t tt -a MyWeb::App
-$ cd MyWeb-App
+$ dancat -s ElasticSearch -t tt -a CloudQuote::App
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>Run the app</h2>
+				<pre><code>
+$ cd CloudQuote-App
 $ ./bin/app.pl
 $ open http://0.0.0.0:3000/
 				</code></pre>
 			</section>
 
 			<section>
+				<h2>What do we get?</h2>
+				<pre><code>
+$ CloudQuote-App: tree
+.
+├── Makefile.PL
+├── bin
+│   └── app.pl
+├── catmandu.yml
+├── config.yml
+├── environments
+│   ├── development.yml
+│   └── production.yml
+├── lib
+│   └── Test
+│       └── App.pm
+├── public
+│   ├── css
+│   │   └── main.css
+│   ├── dispatch.cgi
+│   ├── dispatch.fcgi
+│   ├── img
+│   └── js
+│       └── main.js
+├── t
+│   ├── 001_base.t
+│   └── 002_index_route.t
+└── views
+    ├── index.tt
+    └── layouts
+        └── main.tt
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>catmandu.yml</h2>
+				<pre><code class="yaml">
+store:
+  default:
+    package: ElasticSearch
+    options:
+        index_name: qoutes
+        bags:
+            qoutes: {}
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>Catmandu::Store</h2>
+				<pre><code class="perl">
+use Catmandu;
+
+# loading the default store.
+sub myStore {
+    state $bag = Catmandu->store->bag;
+}
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>Catmandu::Store</h2>
+				<pre><code class="perl">
+use Catmandu::Store::ElasticSearch;
+
+# Create our ElasticSearch store.
+sub store {
+  state $store = Catmandu::Store::ElasticSearch->new(
+    index_name => 'quotes',
+    bags => { 'quote' => {} }
+  );
+}
+
+# Create our Bag.
+sub quotes {
+  state $quotes = &store->bag('quote');
+}
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>Catmandu::Store API</h2>
+				<pre><code class="perl">
+# search the store.
+my $results = quotes->search(query => 'einstein');
+
+# get all records.
+my $results = quotes->search();
+
+# get a record.
+my $result = quotes->get('123');
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>Catmandu::Store API</h2>
+				<pre><code class="perl">
+# add a record.
+my $quote = quotes->add({
+  author => 'einstein',
+  quote => 'something smart'
+});
+
+# update a record.
+my $quote = quotes->add({
+  _id => '123',
+  author => 'einstein',
+  quote => 'something realy smart'
+});
+
+# delete a record.
+quotes->delete('123');
+
+# commit changes.
+quotes->commit;
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>Dancer Routes</h2>
+				<pre><code class="perl">
+prefix '/api' => sub {
+
+	# GET /api/quotes/search/einstein
+	get '/quotes/search/:query' => sub {};
+
+	# GET /api/quotes
+	get '/quotes' => sub {};
+
+	# GET /api/quotes/123
+	get '/quotes/:id' => sub {};
+
+	# POST /api/quotes
+	post '/quotes' => sub {};
+
+	# PUT /api/quotes/123
+	put 'quotes/:id' => sub {};
+
+	# DEL /api/quotes/123
+	del 'quotes/:id' => sub {};
+
+};
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>Route Handlers</h2>
+				<pre><code class="perl">
+set serializer => 'json';
+
+# GET /api/quotes/search/einstein
+get '/quotes/search/:query' => sub {
+	my $results = quotes->search(query => param('query'));
+	$results = $results->to_array;
+
+	$results ? status 200 : status 404;
+	return $results;
+};
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>Route Handlers</h2>
+				<pre><code class="perl">
+set serializer => 'json';
+
+# POST /api/quotes
+post '/quotes' => sub {
+  my $post_params = params('body');
+
+  my $quote = quotes->add({
+    author => $post_params->{'author'},
+    quote => $post_params->{'quote'}
+  });
+
+  if (my ($res) = quotes->commit) { status 201; }
+  else { status 500; }
+
+  return;
+};
+				</code></pre>
+			</section>
+
+			<section>
 				<h1>THE END</h1>
+				<p>
+					Slides and samples available at
+					<a href="http://git.io/GIkLog" target="_blank">http://git.io/GIkLog</a>
+				</p>
 			</section>
 
 		</div> <!-- /.slides -->

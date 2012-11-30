@@ -226,3 +226,262 @@ Catmandu provides a suite of Perl modules to ease the import, storage, retrieval
 For an overview of the Catmandu platform visit the [Catmandu Programmers Guide](http://librecat.org/tutorial/index.html).
 
 Let's use ```Catmandu::Store::ElasticSearch``` to connect our Dancer application with a [ElastichSearch](http://www.elasticsearch.org/) engine.
+
+### Using the dancat generator
+
+Using dancat you can easily scaffold a basic Dancer application that makes use of the Catmandu framework:
+
+```bash
+$ dancat -h
+
+Usage:
+    dancat [options] -a <appname>
+
+Options:
+    -h, --help            : output usage information
+    -v, --version         : output the Dancer version number
+    -a, --application     : the name of your application
+    -p, --path            : the path where to create your application. Defaults to current directory.
+    -s, --store           : the catmandu store to use. Options are [dbi|elasticsearch|hash|solr]
+    -t, --template        : the template engine to use. Options are [tt|simple]
+    -x, --no-check        : don't check for the latest version of Dancer
+
+Usage:
+    $ dancat -s ElasticSearch -t TemplateToolkit -a MyWeb::App
+    $ cd MyWeb-App
+    $ ./bin/app.pl
+```
+
+Let's scaffold a basic Dancer application that uses the Catmandu framework for accessing a ElasticSearch store.
+
+```bash
+$ dancat -s ElasticSearch -t tt -a CloudQuote::App
+
++ CloudQuote
++ CloudQuote/bin
++ CloudQuote/bin/app.pl
++ CloudQuote/catmandu.yml
++ CloudQuote/config.yml
++ CloudQuote/environments
++ CloudQuote/environments/development.yml
++ CloudQuote/environments/production.yml
++ CloudQuote/views
++ CloudQuote/views/index.tt
++ CloudQuote/views/layouts
++ CloudQuote/views/layouts/main.tt
++ CloudQuote/MANIFEST.SKIP
++ CloudQuote/public
++ CloudQuote/public/css
++ CloudQuote/public/css/main.css
++ CloudQuote/public/js
++ CloudQuote/public/js/main.js
++ CloudQuote/public/dispatch.fcgi
++ CloudQuote/public/img
++ CloudQuote/public/dispatch.cgi
++ CloudQuote/lib
++ CloudQuote/lib/Test
++ CloudQuote/lib/Test/App.pm
++ CloudQuote/t
++ CloudQuote/t/002_index_route.t
++ CloudQuote/t/001_base.t
++ CloudQuote/Makefile.PL
+```
+
+The above command will give us a basic Dancer application with a basic Catmandu setup. We get HTML5, [TemplateToolkit](http://www.template-toolkit.org/) and Catmandu out of the box.
+
+### Exposing a HTTP API using Dancer and Catmandu
+
+Let's extend the scaffolded Dancer application to expose a simple (restful-ish) HTTP API. Our goal is to build a simple application that stores quotes and make them searchable.
+
+We will be using ElasticSearch for store and searching our data, Dancer for exposing a JSON HTTP API
+and finaly some Backbone.js to consume this API.
+
+First we'll have a look what the generater gives us:
+
+The most important file for the Catmandu framework is the ```catmandu.yml``` configuration file.
+
+```yaml
+store:
+  default:
+    package: ElasticSearch
+
+exporter:
+  default:
+    package: JSON
+```
+
+This file is loaded by the Catmandu framework at startup and contains some configuration.
+In this case we tell it it should use ```ElasticSearch``` store by default.
+We can easily define multiple data stores in this file.
+
+It's possible to further configure our ElasticSearch store in this config file:
+
+```yaml
+store:
+  default:
+    package: ElasticSearch
+    options:
+        index_name: qoutes
+        bags:
+            qoutes: {}
+...
+```
+
+We could go even further and define a schema for ```quotes```.
+
+Once we've configured Catmandu, we're ready to use the store:
+
+```perl
+use Catmandu;
+
+...
+
+# loading the default store.
+sub myStore {
+    state $bag = Catmandu->store->bag;
+}
+
+# somewhere else
+$self->myStore->search(%args);
+```
+
+When we have multiple stores defined in the ```catmandu.yml```, other than the default store,
+we have to tell Catmandu which store to use: ```Catmandu->store('name-defined-in-config-file')->bag;```.
+
+If we don't have a configuration file, we could explicitly tell Catmandu which store to use:
+
+```perl
+# Create our ElasticSearch store.
+sub store {
+  state $store = Catmandu::Store::ElasticSearch->new(
+    index_name => 'quotes',
+    bags => { 'quote' => {} }
+  );
+}
+
+# Create our Bag.
+sub quotes {
+  state $quotes = &store->bag('quote');
+}
+```
+
+A ```Catmandu::Bag``` is the equivalent of a table in a RDBMS.
+
+Let's have a look at the API for a ```Catmandu::Bag```:
+
+* ```search```: searches the store, if the store is searchable.
+
+* ```get```: retrieves a record by id.
+
+* ```add```: addes a record to the bag, auto-generates an id. When an id is defined, it will update the existing record.
+
+* ```delete```: deletes a record from a bag.
+
+* ```commit```: commits changes to the store.
+
+This is all we need to define our CRUD interface. We just need to define some Dancer routes.
+
+```perl
+prefix '/api' => sub {
+
+  ## GET /api/quotes/search/:query
+  get '/quotes/search/:query' => sub {
+    my $results = quotes->search(query => param('query'))->to_array;
+
+    $results ? status 200 : status 404;
+    return $results;
+  };
+
+  # ...
+
+};
+```
+
+The Dancer ```prefix``` function allows us to prefix routes. In this case we are prefixing all routes
+with ```/api```.
+
+Thanks to the ```Dancer::Serializer``` we don't have to worry about serializing to json. We can just retur an array of records and Dancer will handle the rest.
+
+You can configure the serializer in the ```config.yml``` file or explicilty tell it what to do in ```lib/CloudQuote/App.pm``` file:
+
+```perl
+# Let Dancer handle serialization of perl data structures to JSON.
+set serializer => 'json';
+```
+
+Using ```set serializer => 'mutable';``` Dancer will automaticly use the apropiate serializer.
+e.g. when returning an array it will serialize it to JSON.
+
+```perl
+prefix '/api' => sub {
+
+  ## GET /api/quotes/search/:query
+  get '/quotes/search/:query' => sub {
+    my $results = quotes->search(query => param('query'))->to_array;
+
+    $results ? status 200 : status 404;
+    return $results;
+  };
+
+  get '/quotes' => sub {
+    my $results = quotes->search()->to_array;
+
+    $results ? status 200 : status 404;
+    return $results;
+  };
+
+  ## GET /api/quotes/5
+  get '/quotes/:id' => sub {
+    my $result = quotes->get(param('id'));
+
+    $result ? status 200 : status 404;
+    return $result;
+  };
+
+  ## POST /api/quotes
+  post '/quotes' => sub {
+    my $post_params = params('body');
+
+    my $quote = quotes->add({
+      author => $post_params->{'author'},
+      quote => $post_params->{'quote'}
+    });
+
+    if (my ($res) = quotes->commit) { status 200 }
+    else { status 500 };
+
+    return;
+  };
+
+  ## PUT /api/quotes/5
+  put 'quotes/:id' => sub {
+    my $post_params = params('body');
+
+    my $quote = quotes->add({
+      _id => param('id'),
+      author => $post_params->{'author'},
+      quote => $post_params->{'quote'}
+    });
+
+    if (my ($res) = quotes->commit) { status 200 }
+    else { status 500 };
+
+    return;
+  };
+
+  ## DEL /api/quotes/5
+  del 'quotes/:id' => sub {
+    quotes->delete(param('id'));
+
+    if (my ($res) = quotes->commit) { status 200 }
+    else { status 500 };
+
+    return;
+  };
+
+};
+```
+
+
+## Summary
+
