@@ -1,7 +1,5 @@
-store:
-  default:
-    package: ElasticSearch
-
 exporter:
   default:
     package: JSON
+  csv:
+    package: CSV

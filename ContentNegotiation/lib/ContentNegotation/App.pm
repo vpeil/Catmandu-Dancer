@@ -1,7 +1,10 @@
 package ContentNegotation::App;
+
 use Catmandu;
 use Catmandu::Sane;
 use Dancer ':syntax';
+
+use Dancer::Serializer::CSV;
 
 use Data::Dumper;
 
@@ -34,15 +37,31 @@ sub prefered_content_type {
 }
 
 sub response_to {
-  my $format = shift;
-
-  debug $format;
+  my ($format, $data) = @_;
 
   given ($format) {
 
     when ('application/json') {
+
+      # Serialize to JSON
+      my $json = to_json $data;
+
+      # Set content-type
       content_type 'application/json';
-      return 'json!!!';
+
+      return $json;
+    };
+
+    when ('text/csv') {
+
+      # Serialize to CSV
+      my $s = Dancer::Serializer::CSV->new;
+      my $csv = $s->serialize($data);
+
+      # Set content-type
+      content_type 'text/csv';
+
+      return $csv;
     };
 
     when ('text/html') {
@@ -50,12 +69,26 @@ sub response_to {
       return 'html!!!';
     };
 
+    default {
+      # unsupported content-type.
+      # 406 Not Acceptable
+      status 406;
+      return;
+    };
+
   };
 
 }
 
 get '/' => sub {
-  return response_to( prefered_content_type );
+
+  my $data = {
+    firstName => 'wouter',
+    lastName => 'willaert',
+    age => '21',
+  };
+
+  return response_to( prefered_content_type, $data );
 };
 
 1;
