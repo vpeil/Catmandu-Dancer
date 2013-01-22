@@ -103,6 +103,7 @@ sub validate_catmandu_store {
     my %STORES = (
         dbi => 'DBI',
         elasticsearch => 'ElasticSearch',
+	mongodb => 'MongoDB',
         hash => 'Hash',
         solr => 'Solr',
     );
@@ -111,7 +112,7 @@ sub validate_catmandu_store {
       $store = $STORES{lc $store};
       return;
     } else {
-      print STDERR "Error: Invalid store name.\n Options are [dbi|elasticsearch|hash|solr].\n";
+      print STDERR "Error: Invalid store name.\n Options are [dbi|elasticsearch|mongodb|hash|solr].\n";
       exit;
     }
 }
